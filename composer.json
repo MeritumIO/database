@@ -1,0 +1,48 @@
+{
+  "name": "meritum/database",
+  "description": "Model and repository layer for the Meritum ecosystem",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Mike Georgeff",
+      "email": "mike@georgeff.co",
+      "role": "Author"
+    }
+  ],
+  "license": "MIT",
+  "require": {
+    "php": "^8.4",
+    "georgeff/database": "^1.0",
+    "georgeff/kernel": "^1.7"
+  },
+  "require-dev": {
+    "bnf/phpstan-psr-container": "^1.0",
+    "phpstan/phpstan": "^2.0",
+    "phpunit/phpunit": "^11.0",
+    "squizlabs/php_codesniffer": "^3.11"
+  },
+  "autoload": {
+    "psr-4": {
+      "Meritum\\Database\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Meritum\\Database\\Test\\": "tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "scripts": {
+    "test": [
+      "vendor/bin/phpunit"
+    ],
+    "analyze": [
+      "vendor/bin/phpstan"
+    ],
+    "phpcs": [
+      "vendor/bin/phpcs"
+    ]
+  }
+}
