@@ -39,7 +39,7 @@ class UuidTest extends TestCase
     public function test_v7_matches_uuid_format(): void
     {
         $this->assertMatchesRegularExpression(
-            '/^[0-9a-f]{12}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/',
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/',
             Uuid::v7()
         );
     }
@@ -56,6 +56,10 @@ class UuidTest extends TestCase
         $a = Uuid::v7();
         $b = Uuid::v7();
 
-        $this->assertGreaterThanOrEqual(substr($a, 0, 12), substr($b, 0, 12));
+        // Compare the full timestamp portion: first 8 chars (high 32 bits) + 4 chars (low 16 bits)
+        $tsA = substr($a, 0, 8) . substr($a, 9, 4);
+        $tsB = substr($b, 0, 8) . substr($b, 9, 4);
+
+        $this->assertGreaterThanOrEqual($tsA, $tsB);
     }
 }

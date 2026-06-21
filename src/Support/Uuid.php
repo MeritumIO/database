@@ -24,11 +24,11 @@ final class Uuid
         $timestamp = (int) (microtime(true) * 1000);
 
         return sprintf(
-            '%012x-%04x-%04x-%04x-%012x',
-            $timestamp,
+            '%08x-%04x-%04x-%04x-%012x',
+            ($timestamp >> 16) & 0xFFFFFFFF,
+            $timestamp & 0xFFFF,
             random_int(0, 0x0FFF) | 0x7000,
             random_int(0, 0x3FFF) | 0x8000,
-            random_int(0, 0xFFFF),
             random_int(0, 0xFFFFFFFFFFFF)
         );
     }
