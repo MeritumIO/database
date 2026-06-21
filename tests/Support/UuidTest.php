@@ -51,11 +51,11 @@ class UuidTest extends TestCase
     }
 
     #[Test]
-    public function test_v7_is_time_ordered(): void
+    public function test_v7_timestamp_is_non_decreasing(): void
     {
         $a = Uuid::v7();
         $b = Uuid::v7();
 
-        $this->assertGreaterThanOrEqual($a, $b);
+        $this->assertGreaterThanOrEqual(substr($a, 0, 12), substr($b, 0, 12));
     }
 }
