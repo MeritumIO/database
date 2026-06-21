@@ -18,4 +18,18 @@ final class Uuid
             bin2hex(random_bytes(6))
         );
     }
+
+    public static function v7(): string
+    {
+        $timestamp = (int) (microtime(true) * 1000);
+
+        return sprintf(
+            '%012x-%04x-%04x-%04x-%012x',
+            $timestamp,
+            random_int(0, 0x0FFF) | 0x7000,
+            random_int(0, 0x3FFF) | 0x8000,
+            random_int(0, 0xFFFF),
+            random_int(0, 0xFFFFFFFFFFFF)
+        );
+    }
 }

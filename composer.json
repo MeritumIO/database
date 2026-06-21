@@ -12,7 +12,7 @@
   "license": "MIT",
   "require": {
     "php": "^8.4",
-    "georgeff/database": "^1.0",
+    "georgeff/database": "^1.1",
     "georgeff/kernel": "^1.7"
   },
   "require-dev": {

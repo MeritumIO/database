@@ -321,6 +321,12 @@ abstract class Repository implements RepositoryInterface
     }
 
     /**
+     * This method uses the model's primary key attribute for setting the sort order
+     * Any previous calls to $this->query()->orderBy() are not cleared and will cause unexpected results
+     * To clear any ordering calls before invoking this method call $this->query()->resetOrderBy()
+     *
+     * If using auto-generated UUID primary keys, overwrite Repository::generateUuid() to return Uuid::v7()
+     *
      * @return CursorPaginator<T>
      */
     protected function cursor(int $perPage, ?string $cursor = null): CursorPaginator

@@ -6,7 +6,7 @@ Model and repository layer for the Meritum ecosystem. Provides an active-record 
 
 - PHP 8.4+
 - `georgeff/kernel` ^1.7
-- `georgeff/database` ^1.0
+- `georgeff/database` ^1.1
 
 ## Installation
 
@@ -368,6 +368,12 @@ Serializes to:
 
 Cursors are URL-safe base64 tokens. Pass `nextCursor` or `previousCursor` back as the `cursor` parameter to navigate forward or backward. Direction is encoded in the token — no separate parameter is needed.
 
+> **Limitations**
+>
+> `cursor()` sorts and paginates by the model's primary key. It appends its own `ORDER BY` to the query rather than replacing any existing ordering — any prior `orderBy()` call (including those applied by scopes) will conflict and produce incorrect results. If a scope applies an ordering, call `resetOrderBy()` on the query before invoking `cursor()`.
+>
+> UUIDv4 primary keys are randomly generated and have no natural ordering, making them unsuitable as a cursor column. Override `generateUuid()` to return `Uuid::v7()` on any model used with cursor pagination — UUIDv7 is time-ordered and sorts correctly.
+
 ### Scopes
 
 Scopes are invariant filters registered at construction time via injected dependencies. They are applied automatically to every query built with `query()`.
@@ -407,12 +413,21 @@ Scope bypasses apply only to the next query and reset automatically.
 
 ### Generating UUIDs
 
-By default, string primary keys are auto-generated as UUIDv4. Override `generateUuid()` to use a different version:
+`Meritum\Database\Support\Uuid` provides two UUID generators:
+
+| Method | Version | Ordering |
+|---|---|---|
+| `Uuid::v4()` | UUIDv4 | Random — no natural ordering |
+| `Uuid::v7()` | UUIDv7 | Time-ordered — millisecond timestamp in the first 48 bits |
+
+By default, string primary keys are auto-generated as UUIDv4. Override `generateUuid()` to change this:
 
 ```php
+use Meritum\Database\Support\Uuid;
+
 protected function generateUuid(): string
 {
-    return Uuid::v7(); // if available
+    return Uuid::v7();
 }
 ```
 

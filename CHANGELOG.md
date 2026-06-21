@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-06-21
+
+### Added
+
+- `Uuid::v7()` — time-ordered UUIDv7 generator. Encodes a millisecond Unix timestamp in the first 48 bits, making generated values sortable and suitable for use as cursor pagination keys.
+
+### Changed
+
+- Bumped `georgeff/database` requirement to `^1.1` to bring in `SelectInterface::resetOrderBy()`.
+
+### Documentation
+
+- Cursor pagination limitations documented in README and docblock: `cursor()` appends its own `ORDER BY` and does not clear prior ordering; any `orderBy()` call in a scope or query chain will conflict and produce incorrect results. Call `resetOrderBy()` before invoking `cursor()` if needed.
+- Noted that UUIDv4 primary keys are unsuitable for cursor pagination due to random ordering; override `generateUuid()` to return `Uuid::v7()` on models used with `cursor()`.
+
 ## [1.1.0] - 2026-06-21
 
 ### Added
@@ -21,6 +36,6 @@ All notable changes to this project will be documented in this file.
 - `Paginator` — offset-based pagination result with total, page, and window metadata.
 - `CursorPaginator` — cursor-based pagination using opaque URL-safe base64 tokens; supports forward and backward navigation.
 - `Cursor` — value object encapsulating cursor state.
-- `Uuid` — UUIDv4 and UUIDv7 generation helper.
+- `Uuid` — UUIDv4 generation helper.
 - `DatabaseModule` — kernel module wiring `DatabaseManagerInterface` and `ConnectionManagerInterface` from environment variables (`DB_DRIVER`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_READ_HOSTS`, `DB_STICKY_WRITE`, `DB_PGSQL_SCHEMA`, `DB_PGSQL_SSL_MODE`, `DB_MYSQL_CHARSET`).
 - `ModelNotFoundException` — thrown by `findOrFail()` when no record is found.

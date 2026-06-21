@@ -28,4 +28,34 @@ class UuidTest extends TestCase
     {
         $this->assertNotSame(Uuid::v4(), Uuid::v4());
     }
+
+    #[Test]
+    public function test_v7_returns_string(): void
+    {
+        $this->assertIsString(Uuid::v7());
+    }
+
+    #[Test]
+    public function test_v7_matches_uuid_format(): void
+    {
+        $this->assertMatchesRegularExpression(
+            '/^[0-9a-f]{12}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/',
+            Uuid::v7()
+        );
+    }
+
+    #[Test]
+    public function test_v7_is_unique(): void
+    {
+        $this->assertNotSame(Uuid::v7(), Uuid::v7());
+    }
+
+    #[Test]
+    public function test_v7_is_time_ordered(): void
+    {
+        $a = Uuid::v7();
+        $b = Uuid::v7();
+
+        $this->assertGreaterThanOrEqual($a, $b);
+    }
 }
