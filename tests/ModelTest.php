@@ -3,6 +3,7 @@
 namespace Meritum\Database\Test;
 
 use RuntimeException;
+use JsonSerializable;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
@@ -436,6 +437,178 @@ class ModelTest extends TestCase
 
         $this->assertNull($model->get('created_at'));
         $this->assertNull($model->get('updated_at'));
+    }
+
+    private function makeRelationModel(): Model
+    {
+        return new class extends Model {
+            protected string $table = 'items';
+
+            public function loadRelation(string $name, mixed $value): void
+            {
+                $this->setRelation($name, $value);
+            }
+
+            public function fetchRelation(string $name): mixed
+            {
+                return $this->getRelation($name);
+            }
+
+            public function checkRelation(string $name): bool
+            {
+                return $this->hasRelation($name);
+            }
+        };
+    }
+
+    // --- relations ---
+
+    #[Test]
+    public function test_set_and_get_relation(): void
+    {
+        $model    = $this->makeRelationModel();
+        $relation = new class implements JsonSerializable {
+            public function jsonSerialize(): mixed { return ['id' => 1]; }
+        };
+
+        $model->loadRelation('event', $relation);
+
+        $this->assertSame($relation, $model->fetchRelation('event'));
+    }
+
+    #[Test]
+    public function test_has_relation_returns_false_when_not_set(): void
+    {
+        $model = $this->makeRelationModel();
+
+        $this->assertFalse($model->checkRelation('event'));
+    }
+
+    #[Test]
+    public function test_has_relation_returns_true_when_set(): void
+    {
+        $model    = $this->makeRelationModel();
+        $relation = new class implements JsonSerializable {
+            public function jsonSerialize(): mixed { return []; }
+        };
+
+        $model->loadRelation('event', $relation);
+
+        $this->assertTrue($model->checkRelation('event'));
+    }
+
+    #[Test]
+    public function test_get_relation_returns_null_when_not_set(): void
+    {
+        $model = $this->makeRelationModel();
+
+        $this->assertNull($model->fetchRelation('event'));
+    }
+
+    #[Test]
+    public function test_set_relation_throws_on_null(): void
+    {
+        $model = $this->makeRelationModel();
+
+        $this->expectException(\LogicException::class);
+
+        $model->loadRelation('event', null);
+    }
+
+    #[Test]
+    public function test_set_relation_throws_on_non_json_serializable_object(): void
+    {
+        $model    = $this->makeRelationModel();
+        $relation = new class {};
+
+        $this->expectException(\LogicException::class);
+
+        $model->loadRelation('event', $relation);
+    }
+
+    #[Test]
+    public function test_set_relation_accepts_scalar(): void
+    {
+        $model = $this->makeRelationModel();
+
+        $model->loadRelation('count', 42);
+
+        $this->assertSame(42, $model->fetchRelation('count'));
+    }
+
+    #[Test]
+    public function test_set_relation_accepts_array(): void
+    {
+        $model = $this->makeRelationModel();
+
+        $model->loadRelation('tags', ['php', 'oop']);
+
+        $this->assertSame(['php', 'oop'], $model->fetchRelation('tags'));
+    }
+
+    #[Test]
+    public function test_to_array_includes_json_serializable_relation(): void
+    {
+        $model    = $this->makeRelationModel();
+        $relation = new class implements JsonSerializable {
+            public function jsonSerialize(): mixed { return ['id' => 1, 'name' => 'PHP']; }
+        };
+
+        $model->loadRelation('event', $relation);
+
+        $this->assertSame(['id' => 1, 'name' => 'PHP'], $model->toArray()['event']);
+    }
+
+    #[Test]
+    public function test_to_array_calls_json_serialize_not_stores_object(): void
+    {
+        $model    = $this->makeRelationModel();
+        $relation = new class implements JsonSerializable {
+            public function jsonSerialize(): mixed { return ['id' => 99]; }
+        };
+
+        $model->loadRelation('event', $relation);
+        $result = $model->toArray();
+
+        $this->assertIsArray($result['event']);
+        $this->assertNotInstanceOf(JsonSerializable::class, $result['event']);
+    }
+
+    #[Test]
+    public function test_to_array_includes_scalar_relation(): void
+    {
+        $model = $this->makeRelationModel();
+
+        $model->loadRelation('count', 5);
+
+        $this->assertSame(5, $model->toArray()['count']);
+    }
+
+    #[Test]
+    public function test_to_array_includes_array_relation(): void
+    {
+        $model = $this->makeRelationModel();
+
+        $model->loadRelation('tags', ['a', 'b']);
+
+        $this->assertSame(['a', 'b'], $model->toArray()['tags']);
+    }
+
+    #[Test]
+    public function test_to_array_merges_attributes_and_relations(): void
+    {
+        $model    = $this->makeRelationModel();
+        $relation = new class implements JsonSerializable {
+            public function jsonSerialize(): mixed { return ['id' => 1]; }
+        };
+
+        $model->hydrate(['name' => 'Alice']);
+        $model->loadRelation('event', $relation);
+
+        $result = $model->toArray();
+
+        $this->assertSame('Alice', $result['name']);
+        $this->assertSame(['id' => 1], $result['event']);
     }
 
     // --- toArray / toJson / jsonSerialize ---

@@ -158,6 +158,56 @@ Models implement `JsonSerializable`. `DateTime` values are formatted as ISO 8601
 json_encode($user); // {"id":"...","name":"Alice","created_at":"2024-01-15T12:00:00+00:00"}
 ```
 
+### Relations
+
+Models carry a protected relation bag — a simple key/value store for attaching related data after it has been loaded. There is no lazy loading or query triggering; the caller fetches related data independently and attaches it to the model.
+
+Expose relations through typed public wrapper methods on the concrete model:
+
+```php
+class EventLog extends Model
+{
+    protected string $table = 'event_logs';
+
+    public function setEvent(Event $event): void
+    {
+        $this->setRelation('event', $event);
+    }
+
+    public function getEvent(): Event
+    {
+        /** @var Event */
+        return $this->getRelation('event');
+    }
+
+    public function hasEvent(): bool
+    {
+        return $this->hasRelation('event');
+    }
+}
+```
+
+Attach the relation after loading both models:
+
+```php
+$log   = $logRepository->findOrFail($id);
+$event = $eventRepository->findOrFail($log->eventId);
+
+$log->setEvent($event);
+```
+
+Relations are merged into `toArray()` automatically. The key passed to `setRelation()` becomes the key in the serialized output:
+
+```json
+{
+    "id": "...",
+    "event_id": "...",
+    "event": { "id": "...", "name": "PHP Conference" }
+}
+```
+
+Relations can hold any JSON-safe value — a model, a collection, a paginator, an array, or a scalar. Objects must implement `JsonSerializable`; `setRelation()` throws a `LogicException` otherwise. The typed wrapper method on the concrete model is the actual type contract — the base class bag is deliberately untyped so it does not constrain what sources or shapes of data can be attached.
+
 ---
 
 ## Repositories

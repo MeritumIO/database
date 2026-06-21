@@ -95,6 +95,13 @@ abstract class Model implements JsonSerializable
     private bool $exists = false;
 
     /**
+     * Relationships stored on the model
+     *
+     * @var array<string, mixed>
+     */
+    private array $relations = [];
+
+    /**
      * @param array<string, mixed> $attributes
      */
     public function __construct(array $attributes = [])
@@ -140,6 +147,12 @@ abstract class Model implements JsonSerializable
             } else {
                 $data[$name] = $casted;
             }
+        }
+
+        foreach ($this->relations as $key => $relation) {
+            $data[$key] = $relation instanceof JsonSerializable
+                ? $relation->jsonSerialize()
+                : $relation;
         }
 
         return $data;
@@ -257,6 +270,29 @@ abstract class Model implements JsonSerializable
             'date'      => $value instanceof DateTimeInterface ? $value->format('Y-m-d') : $value,
             'timestamp' => $value instanceof DateTimeInterface ? $value->getTimestamp() : $value
         };
+    }
+
+    protected function getRelation(string $name): mixed
+    {
+        return $this->hasRelation($name) ? $this->relations[$name] : null;
+    }
+
+    protected function setRelation(string $name, mixed $relation): void
+    {
+        if (null === $relation) {
+            throw new \LogicException('Cannot set a null relation');
+        }
+
+        if (is_object($relation) && !$relation instanceof JsonSerializable) {
+            throw new \LogicException('Relational objects must be json serializable');
+        }
+
+        $this->relations[$name] = $relation;
+    }
+
+    protected function hasRelation(string $name): bool
+    {
+        return array_key_exists($name, $this->relations);
     }
 
     /**
