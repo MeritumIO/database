@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2026-06-21
+
+### Fixed
+
+- `Uuid::v7()` generated a non-standard 144-bit value due to using `%012x` for the timestamp field. The 48-bit timestamp is now correctly split across the first two UUID groups (`%08x` high 32 bits + `%04x` low 16 bits), producing a valid 128-bit `8-4-4-4-12` UUID string.
+
 ## [1.2.0] - 2026-06-21
 
 ### Added
