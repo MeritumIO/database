@@ -94,6 +94,11 @@ class TestRepository extends Repository
         return $this->first();
     }
 
+    public function callFirstOrFail(): Model
+    {
+        return $this->firstOrFail();
+    }
+
     public function callGet(): Collection
     {
         return $this->get();
@@ -464,9 +469,43 @@ class RepositoryTest extends TestCase
         $repo = new TestRepository($db);
 
         $this->expectException(\Meritum\Database\Exception\ModelNotFoundException::class);
-        $this->expectExceptionMessage('abc');
+        $this->expectExceptionMessage('UserModel was not found');
 
         $repo->findOrFail('abc');
+    }
+
+    // --- firstOrFail ---
+
+    #[Test]
+    public function test_first_or_fail_returns_model_when_found(): void
+    {
+        $db = $this->db();
+        $db->method('select')->willReturn($this->fluentSelect());
+        $db->method('fetchOne')->willReturn(['id' => 'abc', 'name' => 'Alice']);
+
+        $repo = new TestRepository($db);
+        $repo->newQuery();
+        $model = $repo->callFirstOrFail();
+
+        $this->assertInstanceOf(UserModel::class, $model);
+        $this->assertSame('Alice', $model->get('name'));
+        $this->assertFalse($model->isNew());
+    }
+
+    #[Test]
+    public function test_first_or_fail_throws_when_not_found(): void
+    {
+        $db = $this->db();
+        $db->method('select')->willReturn($this->fluentSelect());
+        $db->method('fetchOne')->willReturn(null);
+
+        $repo = new TestRepository($db);
+        $repo->newQuery();
+
+        $this->expectException(\Meritum\Database\Exception\ModelNotFoundException::class);
+        $this->expectExceptionMessage('UserModel was not found');
+
+        $repo->callFirstOrFail();
     }
 
     // --- first ---

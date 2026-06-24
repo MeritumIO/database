@@ -369,4 +369,54 @@ class CollectionTest extends TestCase
 
         $this->assertSame($collection->toArray(), $collection->jsonSerialize());
     }
+
+    // --- serialize / unserialize ---
+
+    #[Test]
+    public function test_serialize_preserves_models(): void
+    {
+        $a = new SerializableModel(['id' => 'a', 'name' => 'Alice']);
+        $a->syncOriginal();
+        $b = new SerializableModel(['id' => 'b', 'name' => 'Bob']);
+        $b->syncOriginal();
+
+        $collection = new Collection(['a' => $a, 'b' => $b]);
+
+        /** @var Collection<SerializableModel> $restored */
+        $restored = unserialize(serialize($collection));
+
+        $this->assertCount(2, $restored);
+        $this->assertSame('Alice', $restored->get('a')->get('name'));
+        $this->assertSame('Bob', $restored->get('b')->get('name'));
+    }
+
+    #[Test]
+    public function test_serialize_preserves_keys(): void
+    {
+        $a = new SerializableModel(['id' => 'a']);
+        $a->syncOriginal();
+        $b = new SerializableModel(['id' => 'b']);
+        $b->syncOriginal();
+
+        $collection = new Collection(['a' => $a, 'b' => $b]);
+
+        /** @var Collection<SerializableModel> $restored */
+        $restored = unserialize(serialize($collection));
+
+        $this->assertSame(['a', 'b'], $restored->keys());
+    }
+
+    #[Test]
+    public function test_unserialized_models_are_not_dirty(): void
+    {
+        $model = new SerializableModel(['id' => 'a', 'name' => 'Alice']);
+        $model->syncOriginal();
+
+        $collection = new Collection(['a' => $model]);
+
+        /** @var Collection<SerializableModel> $restored */
+        $restored = unserialize(serialize($collection));
+
+        $this->assertFalse($restored->get('a')->isDirty());
+    }
 }

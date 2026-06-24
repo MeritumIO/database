@@ -158,6 +158,17 @@ Models implement `JsonSerializable`. `DateTime` values are formatted as ISO 8601
 json_encode($user); // {"id":"...","name":"Alice","created_at":"2024-01-15T12:00:00+00:00"}
 ```
 
+Models also support PHP native serialization via `__serialize()`/`__unserialize()`, making them compatible with any PSR-6/PSR-16 cache that uses `serialize()` internally (Redis, APCu, etc.). Attributes and relations are preserved; the unserialized model has no dirty state. Callers are responsible for ensuring any relations stored on the model are themselves serializable.
+
+```php
+$user = $repo->findOrFail($id);
+$cache->set("user:{$id}", serialize($user));
+
+$user = unserialize($cache->get("user:{$id}"));
+```
+
+`Collection` supports the same native serialization and preserves model keys.
+
 ### Relations
 
 Models carry a protected relation bag — a simple key/value store for attaching related data after it has been loaded. There is no lazy loading or query triggering; the caller fetches related data independently and attaches it to the model.
@@ -282,7 +293,7 @@ $user = $repo->findBy('email', 'alice@example.com');
 
 ### Building Queries
 
-Terminal methods (`first`, `get`, `count`, `paginate`, `cursor`) are `protected` and intended to be called from within a repository method after calling `query()`.
+Terminal methods (`first`, `firstOrFail`, `get`, `count`, `paginate`, `cursor`) are `protected` and intended to be called from within a repository method after calling `query()`.
 
 ```php
 protected function activeCount(): int
@@ -291,7 +302,16 @@ protected function activeCount(): int
 
     return $this->count();
 }
+
+public function findBySlug(string $slug): Post
+{
+    $this->query()->where('slug', $slug);
+
+    return $this->firstOrFail();
+}
 ```
+
+`firstOrFail()` throws `ModelNotFoundException` when the query returns no result, equivalent to `findOrFail()` but for custom where queries built with `query()`.
 
 ### Offset Pagination
 
@@ -457,7 +477,7 @@ $collection->merge($other);     // new Collection — existing keys win on confl
 
 ## Exception Handling
 
-`ModelNotFoundException` is thrown by `findOrFail()`. Map it to a 404 in your HTTP exception handler:
+`ModelNotFoundException` is thrown by `findOrFail()` and `firstOrFail()`. The message is formatted as `"{ModelName} was not found"`. Map it to a 404 in your HTTP exception handler:
 
 ```php
 use Meritum\Database\Exception\ModelNotFoundException;

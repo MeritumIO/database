@@ -45,6 +45,11 @@ abstract class Repository implements RepositoryInterface
      */
     abstract protected function getModelClass(): string;
 
+    private function getModelName(): string
+    {
+        return substr(strrchr($this->getModelClass(), '\\') ?: $this->getModelClass(), 1);
+    }
+
     /**
      * Create a new fluent query
      *
@@ -154,7 +159,7 @@ abstract class Repository implements RepositoryInterface
         $model = $this->find($pk);
 
         if (null === $model) {
-            throw new ModelNotFoundException("Record with primary key value of [{$pk}] not found");
+            throw new ModelNotFoundException($this->getModelName() . ' was not found');
         }
 
         return $model;
@@ -242,6 +247,20 @@ abstract class Repository implements RepositoryInterface
         $model->hydrate($result);
 
         $model->syncOriginal();
+
+        return $model;
+    }
+
+    /**
+     * @return T
+     */
+    protected function firstOrFail(): Model
+    {
+        $model = $this->first();
+
+        if (null === $model) {
+            throw new ModelNotFoundException($this->getModelName() . ' was not found');
+        }
 
         return $model;
     }

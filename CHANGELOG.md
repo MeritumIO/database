@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-06-23
+
+### Added
+
+- `Repository::firstOrFail()` — protected terminal method that throws `ModelNotFoundException` when a custom `query()->where(...)` chain returns no result. Companion to `findOrFail()` for repository methods that build their own queries.
+- `Model::__serialize()`/`__unserialize()` — PHP native serialization support. Persists attributes, relations, and exists state; reconstructs original from attributes on unserialize so the model has no dirty state. Compatible with any cache backend that uses `serialize()` (PSR-6, PSR-16, Redis, APCu).
+- `Collection::__serialize()`/`__unserialize()` — PHP native serialization support. Preserves model keys and delegates to each model's own serialization.
+
+### Changed
+
+- `ModelNotFoundException` message format changed from `"Record with primary key value of [{$pk}] not found"` to `"{ModelName} was not found"` — shorter and consistent between `findOrFail()` and `firstOrFail()`.
+
 ## [1.2.1] - 2026-06-21
 
 ### Fixed

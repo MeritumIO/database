@@ -10,6 +10,21 @@ use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use Meritum\Database\Model;
 
+class SerializableModel extends Model
+{
+    protected string $table = 'items';
+
+    public function get(string $name): mixed
+    {
+        return $this->getAttribute($name);
+    }
+
+    public function loadRelation(string $name, mixed $value): void
+    {
+        $this->setRelation($name, $value);
+    }
+}
+
 class ModelTest extends TestCase
 {
     private function makeModel(array $casts = [], array $attributes = [], array $accessors = [], array $mutators = []): Model
@@ -869,5 +884,59 @@ class ModelTest extends TestCase
         $model->set('name', 'ALICE');
 
         $this->assertSame('alice', $model->get('name'));
+    }
+
+    // --- serialize / unserialize ---
+
+    #[Test]
+    public function test_serialize_preserves_attributes(): void
+    {
+        $model = new SerializableModel(['id' => 'abc', 'name' => 'Alice']);
+        $model->syncOriginal();
+
+        /** @var SerializableModel $restored */
+        $restored = unserialize(serialize($model));
+
+        $this->assertSame('abc', $restored->get('id'));
+        $this->assertSame('Alice', $restored->get('name'));
+    }
+
+    #[Test]
+    public function test_unserialized_model_exists(): void
+    {
+        $model = new SerializableModel(['id' => 'abc']);
+        $model->syncOriginal();
+
+        /** @var SerializableModel $restored */
+        $restored = unserialize(serialize($model));
+
+        $this->assertTrue($restored->exists());
+        $this->assertFalse($restored->isNew());
+    }
+
+    #[Test]
+    public function test_unserialized_model_is_not_dirty(): void
+    {
+        $model = new SerializableModel(['id' => 'abc', 'name' => 'Alice']);
+        $model->syncOriginal();
+
+        /** @var SerializableModel $restored */
+        $restored = unserialize(serialize($model));
+
+        $this->assertFalse($restored->isDirty());
+        $this->assertSame([], $restored->getDirty());
+    }
+
+    #[Test]
+    public function test_serialize_preserves_relations(): void
+    {
+        $model = new SerializableModel(['id' => 'abc']);
+        $model->syncOriginal();
+        $model->loadRelation('tags', ['php', 'oop']);
+
+        /** @var SerializableModel $restored */
+        $restored = unserialize(serialize($model));
+
+        $this->assertSame(['php', 'oop'], $restored->toArray()['tags']);
     }
 }

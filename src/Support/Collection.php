@@ -27,6 +27,22 @@ final class Collection implements Iterator, Countable, JsonSerializable
         $this->models = $models;
     }
 
+    /**
+     * @return array<int|string, T>
+     */
+    public function __serialize(): array
+    {
+        return $this->models;
+    }
+
+    /**
+     * @param array<int|string, T> $data
+     */
+    public function __unserialize(array $data): void
+    {
+        $this->models = $data;
+    }
+
     public function isEmpty(): bool
     {
         return empty($this->models);

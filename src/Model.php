@@ -110,6 +110,29 @@ abstract class Model implements JsonSerializable
     }
 
     /**
+     * @return array{exists: bool, attributes: array<string, mixed>, relations: array<string, mixed>}
+     */
+    public function __serialize(): array
+    {
+        return [
+            'exists'     => $this->exists,
+            'attributes' => $this->attributes,
+            'relations'  => $this->relations,
+        ];
+    }
+
+    /**
+     * @param array{exists: bool, attributes: array<string, mixed>, relations: array<string, mixed>} $data
+     */
+    public function __unserialize(array $data): void
+    {
+        $this->exists     = $data['exists'];
+        $this->attributes = $data['attributes'];
+        $this->relations  = $data['relations'];
+        $this->original   = $data['attributes'];
+    }
+
+    /**
      * Hydrate the model
      *
      * @param array<string, mixed> $data
