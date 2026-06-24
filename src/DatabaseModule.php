@@ -23,7 +23,7 @@ final class DatabaseModule implements ConfigurableModuleInterface
         $kernel->define(
             ConnectionManagerInterface::class,
             fn(ContainerInterface $c) => new ConnectionManager($c->get(DriverInterface::class))
-        );
+        )->share();
 
         $kernel->define(
             DatabaseManagerInterface::class,

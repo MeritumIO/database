@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2026-06-24
+
+### Fixed
+
+- `DatabaseModule` now shares the `ConnectionManagerInterface` definition. Without sharing, each resolution instantiated a new `ConnectionManager` and opened a new connection.
+
 ## [1.3.0] - 2026-06-23
 
 ### Added

@@ -98,4 +98,47 @@ class DatabaseModuleTest extends TestCase
         $this->assertContains(ConnectionManagerInterface::class, $definedIds);
         $this->assertContains(DatabaseManagerInterface::class, $definedIds);
     }
+
+    #[Test]
+    public function test_connection_manager_is_shared(): void
+    {
+        $connectionDefinition = $this->createMock(DefinitionInterface::class);
+        $connectionDefinition->expects($this->once())->method('share')->willReturn($connectionDefinition);
+
+        $otherDefinition = $this->createStub(DefinitionInterface::class);
+
+        $kernel = $this->createMock(KernelInterface::class);
+        $kernel->method('define')->willReturnCallback(
+            function (string $id) use ($connectionDefinition, $otherDefinition): DefinitionInterface {
+                return $id === ConnectionManagerInterface::class ? $connectionDefinition : $otherDefinition;
+            }
+        );
+
+        (new DatabaseModule())->register($kernel);
+    }
+
+    #[Test]
+    public function test_driver_and_manager_are_not_shared(): void
+    {
+        $driverDefinition = $this->createMock(DefinitionInterface::class);
+        $driverDefinition->expects($this->never())->method('share');
+
+        $managerDefinition = $this->createMock(DefinitionInterface::class);
+        $managerDefinition->expects($this->never())->method('share');
+
+        $connectionDefinition = $this->createStub(DefinitionInterface::class);
+
+        $kernel = $this->createMock(KernelInterface::class);
+        $kernel->method('define')->willReturnCallback(
+            function (string $id) use ($driverDefinition, $connectionDefinition, $managerDefinition): DefinitionInterface {
+                return match ($id) {
+                    DriverInterface::class           => $driverDefinition,
+                    ConnectionManagerInterface::class => $connectionDefinition,
+                    DatabaseManagerInterface::class  => $managerDefinition,
+                };
+            }
+        );
+
+        (new DatabaseModule())->register($kernel);
+    }
 }
